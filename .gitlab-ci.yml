@@ -3,19 +3,21 @@ stages:
   - build
   - docker
 
+cache:
+  paths:
+    - .m2/repository
+
 test:
   stage: test
   image: maven:3.9.6-eclipse-temurin-17
   script:
     - mvn install:install-file -Dfile=libs/product-core-0.3.0.jar -DgroupId=sn.isi.l3gl.core -DartifactId=product-core -Dversion=0.3.0 -Dpackaging=jar
-    - mvn test -DskipTests
-  allow_failure: true
+    - mvn test
 
 build:
   stage: build
   image: maven:3.9.6-eclipse-temurin-17
   script:
-    - mvn install:install-file -Dfile=libs/product-core-0.3.0.jar -DgroupId=sn.isi.l3gl.core -DartifactId=product-core -Dversion=0.3.0 -Dpackaging=jar
     - mvn clean package -DskipTests
   artifacts:
     paths:
