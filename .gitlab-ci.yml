@@ -3,17 +3,34 @@ stages:
   - build
   - docker
 
+# Mettre en cache le repository Maven pour accélérer les builds
 cache:
   paths:
     - .m2/repository
 
+# Job Test avec MySQL comme service
 test:
   stage: test
   image: maven:3.9.6-eclipse-temurin-17
+  services:
+    - name: mysql:8.0
+      alias: mysql
+  variables:
+    MYSQL_ROOT_PASSWORD: rootpassword
+    MYSQL_DATABASE: product_db
+    MYSQL_USER: user
+    MYSQL_PASSWORD: password
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/product_db
+    SPRING_DATASOURCE_USERNAME: user
+    SPRING_DATASOURCE_PASSWORD: password
   script:
+    # Attente que MySQL soit prêt avant de lancer Maven
+    - echo "Attente que MySQL soit prêt..."
+    - until mysql -h mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES;" ; do sleep 5; done
     - mvn install:install-file -Dfile=libs/product-core-0.3.0.jar -DgroupId=sn.isi.l3gl.core -DartifactId=product-core -Dversion=0.3.0 -Dpackaging=jar
     - mvn test
 
+# Job Build (génération JAR)
 build:
   stage: build
   image: maven:3.9.6-eclipse-temurin-17
@@ -23,6 +40,7 @@ build:
     paths:
       - target/*.jar
 
+# Job Docker (build + push)
 docker:
   stage: docker
   image: docker:20.10.16
